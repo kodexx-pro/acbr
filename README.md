@@ -1,66 +1,90 @@
-# ACBr Mirror
+# ACBr Mirror & ACBr Rust
 
-> Espelho **não oficial** do código-fonte do Projeto ACBr, mantido para facilitar a consulta do histórico em Git e apoiar o desenvolvimento do ecossistema ACBr Rust.
->
-> A fonte de verdade é o [SVN oficial do ACBr](https://svn.code.sf.net/p/acbr/code/trunk2). Este projeto não é mantido ou endossado pela equipe ACBr.
+**Uma ponte entre o SVN do Projeto ACBr e um port experimental em Rust.**
 
-## O que você encontra aqui
+Este repositório é uma iniciativa independente e **não oficial** da Kodexx. O [SVN do Projeto ACBr](https://svn.code.sf.net/p/acbr/code/trunk2) é a fonte de verdade para o código Pascal; os direitos dos componentes pertencem aos respectivos autores e colaboradores.
 
-| Branch | Conteúdo |
-| --- | --- |
-| `main` | Apresentação e documentação deste espelho. |
-| `upstream/trunk2` | Histórico e arquivos importados do caminho `trunk2` do SVN. |
+## Navegue pelo projeto
 
-A importação se limita ao `trunk2`. Ela não inclui automaticamente os diretórios `tools`, outras branches ou tags do SVN. A branch de documentação tem histórico independente e não altera os arquivos originais do ACBr.
+| Branch | Conteúdo | Como é atualizada |
+| --- | --- | --- |
+| [`main`](https://github.com/kodexx-pro/acbr/tree/main) | Apresentação e documentação do projeto. | Manualmente. |
+| [`upstream/trunk2`](https://github.com/kodexx-pro/acbr/tree/upstream/trunk2) | Espelho do histórico e dos arquivos do `trunk2` oficial. | Automaticamente pela VPS, via `git-svn`. |
+| [`rust`](https://github.com/kodexx-pro/acbr/tree/rust) | Código-fonte, testes e documentação do port experimental em Rust. | Por alterações de desenvolvimento, após verificação. |
 
-## Como a atualização funciona
+As branches têm históricos independentes. O espelho cobre `trunk2`; não inclui automaticamente `tools` ou as outras branches e tags SVN. Não faça commits manuais nem force push em `upstream/trunk2`.
+
+## Do SVN ao Rust
 
 ```mermaid
 flowchart LR
-    SVN[SVN oficial ACBr] --> Worker[Sincronizador na VPS]
-    Worker --> Git[Branch upstream/trunk2]
-    Git --> GitHub[Espelho no GitHub]
-    GitHub --> Rust[Análise futura para ACBr Rust]
+    SVN[SVN oficial ACBr] --> Mirror[Espelho Git]
+    Mirror --> Analysis[Análise da alteração]
+    Analysis --> Port[Port para Rust]
+    Port --> Tests[Testes diferenciais]
+    Tests --> Review[Revisão]
 ```
 
-1. Uma cópia persistente na VPS usa `git-svn` para ler novas revisões do SVN oficial. O temporizador aguarda cerca de cinco minutos após cada execução para iniciar a próxima.
-2. Cada revisão relevante para `trunk2` é convertida em commit Git, preservando mensagem, data e identificação disponível do autor. A referência `git-svn-id` relaciona cada commit à origem e à revisão SVN.
-3. O sincronizador publica a branch de espelhamento no GitHub por avanço normal, sem reescrever o histórico. Um bloqueio impede duas execuções simultâneas.
-4. Falhas de rede ou autenticação interrompem a execução; o próximo ciclo poderá retomá-la. O registro de execução permite investigar problemas.
-5. Em etapa futura, um processo poderá analisar cada mudança publicada e propor sua adaptação para Rust. A sincronização, por si só, não implementa nem garante a portabilidade.
+1. A VPS consulta o SVN oficial e converte as revisões relevantes em commits Git, preservando mensagens e metadados disponíveis. O rodapé `git-svn-id` identifica o caminho, UUID e número da revisão de origem.
+2. O serviço publica os commits em `upstream/trunk2` sem reescrever seu histórico. Um bloqueio impede execuções simultâneas; falhas são registradas e a próxima execução tenta novamente.
+3. Escolhemos uma funcionalidade delimitada, identificamos o arquivo, a revisão e os colaboradores da referência e implementamos o comportamento em Rust.
+4. Testamos exemplos e casos de borda, inclusive comparando a execução Rust com a função Pascal correspondente quando o teste for viável. Divergências e limitações são documentadas.
+5. Publicamos o código verificado na branch `rust`, com o aviso de autoria e a licença aplicável ao trecho portado.
 
-O estado do `git-svn`, inclusive o diretório `.git`, deve ser preservado e incluído no backup. A importação inicial pode levar bastante tempo, pois processa o histórico acessível do caminho escolhido. Revisões SVN que não alterem `trunk2` não geram necessariamente commits nessa branch.
+**O espelhamento é automático. A análise, a portabilidade e a revisão ainda são manuais.** O fluxo de agentes descrito acima é a direção planejada, não um serviço já implantado. Uma revisão publicada no espelho não significa que ela já foi portada.
 
-## Acompanhe as mudanças
+## Primeiro recorte em Rust
 
-Selecione a branch `upstream/trunk2` no GitHub e abra **Commits** para consultar o histórico. A revisão SVN aparece no rodapé `git-svn-id` do commit importado. Para comparar duas versões localmente:
+A crate [`acbr-dfe`](https://github.com/kodexx-pro/acbr/tree/rust/crates/acbr-dfe) contém `validar_codigo_uf`, portada de `ValidarCodigoUF` da unit `ACBrDFeUtil`. A implementação foi comparada com a função Pascal extraída da revisão SVN **r49417**, em 3.003 entradas, na VPS Linux ARM64.
+
+A crate usa `no_std` e não possui dependências externas. Trata-se de uma prova de conceito: ainda não valida documentos fiscais completos e não foi homologada em outras plataformas ou dispositivos.
+
+### Instalação
+
+Adicione ao `Cargo.toml` do seu projeto:
+
+```toml
+[dependencies]
+acbr-dfe = { git = "https://github.com/kodexx-pro/acbr.git", branch = "rust" }
+```
+
+```rust
+use acbr_dfe::validar_codigo_uf;
+
+assert!(validar_codigo_uf(42)); // Santa Catarina
+assert!(!validar_codigo_uf(99));
+```
+
+Para um build reproduzível, substitua `branch` por `rev` com um SHA específico e mantenha o `Cargo.lock` do seu projeto. A branch `rust` está em desenvolvimento e pode mudar.
+
+### Testes
 
 ```bash
-git clone --branch upstream/trunk2 https://github.com/kodexx-pro/acbr.git
-cd acbr
-git log --oneline -20
-git diff <commit-anterior> <commit-atual>
+git clone --single-branch --branch rust https://github.com/kodexx-pro/acbr.git acbr-rust
+cd acbr-rust
+cargo test --workspace
 ```
 
-Para impedir divergências, não faça commits manuais nem force push na branch de espelhamento. Propostas para o código ACBr devem seguir os canais oficiais do projeto.
+Para reproduzir a comparação com Pascal, instale Python 3 e Free Pascal e aponte para um clone do espelho que contenha o commit fixado no [`NOTICE.md`](https://github.com/kodexx-pro/acbr/blob/rust/NOTICE.md):
 
-## Origem, autoria e licença
+```bash
+export ACBR_MIRROR_DIR=/caminho/para/o/clone-do-espelho
+python3 scripts/verify_differential.py
+```
 
-O ACBr e seu código pertencem aos respectivos autores e colaboradores. Este espelho mantém os avisos e os arquivos de licença presentes na fonte. O projeto informa utilizar LGPL; consulte os arquivos de cada componente e suas dependências antes de redistribuir ou criar obras derivadas. Informações oficiais: [fontes do ACBr](https://projetoacbr.com.br/fontes/).
+O teste compila a **função extraída** do fonte Pascal, não a unit ACBr completa. A referência retorna `false` para o código `91` devido a um delimitador ausente em sua constante; o port reproduz esse comportamento. Isso não estabelece a regra fiscal correta. Veja a [documentação da branch Rust](https://github.com/kodexx-pro/acbr/tree/rust) para detalhes.
 
-O username do SVN é preservado conforme disponibilizado pelo histórico; endereços sintéticos eventualmente usados na conversão não representam e-mails reais nem garantem associação a perfis GitHub.
+## Acompanhe o espelho
 
-## Operação na VPS
-
-Para acompanhar o temporizador e consultar os registros de sincronização:
+O temporizador aguarda cerca de cinco minutos após cada execução para iniciar a próxima. Na VPS:
 
 ```bash
 systemctl --user status acbr-mirror-sync.timer
 journalctl --user -u acbr-mirror-sync.service -n 50 --no-pager
 ```
 
-A primeira importação e publicação do histórico podem demorar. Se um envio falhar, a próxima execução tenta novamente sem usar `--force`. O serviço e o temporizador rodam sob o usuário que mantém o espelho.
+O diretório `.git` do clone `git-svn` e sua configuração precisam ser preservados e incluídos no backup. Alterações no ACBr devem ser propostas pelos canais oficiais do projeto.
 
-## Estado da implantação
+## Origem, autoria e licença
 
-**Espelhamento ativo.** O histórico inicial está publicado na branch `upstream/trunk2`, e a VPS verifica atualizações automaticamente. A análise automática para Rust é uma etapa futura.
+A licença e os avisos originais são preservados no espelho. O arquivo usado no primeiro port declara **LGPL 2.1 ou posterior**; a branch `rust` inclui a licença, os créditos e o cabeçalho original em [`NOTICE.md`](https://github.com/kodexx-pro/acbr/blob/rust/NOTICE.md). Outros componentes e suas dependências devem ser analisados individualmente. Informações oficiais: [fontes do ACBr](https://projetoacbr.com.br/fontes/).
