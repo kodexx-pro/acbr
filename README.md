@@ -13,7 +13,7 @@ Port independente e experimental de funcionalidades do Projeto ACBr. A fonte ori
 
 O componente oferece os 17 tipos, formatadores, calculador, opções e resultados detalhados com mensagem, documento, dígito e callback. A comparação cobre a revisão fixada do ACBr; paridade integral em todas as entradas e plataformas ainda não está demonstrada. Consulte a [revisão](docs/ACBRVALIDADOR_REVIEW.md).
 
-As crates são `no_std`; `acbr-util` e `acbr-validador` usam `alloc`. Foram testadas na VPS Linux ARM64; a compatibilidade em outros ambientes ainda não foi verificada. Os resultados são experimentais, sem homologação fiscal.
+As crates são `no_std`; `acbr-util` e `acbr-validador` usam `alloc`. O CI executa `cargo test` e verifica formatação em Linux e Windows a cada push e pull request. A validação diferencial contra a unit Pascal completa foi executada na VPS Linux ARM64. Os resultados são experimentais, sem homologação fiscal.
 
 ## Uso
 
