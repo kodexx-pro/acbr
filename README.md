@@ -33,29 +33,34 @@ flowchart LR
 
 **O espelhamento é automático. A análise, a portabilidade e a revisão ainda são manuais.** O fluxo de agentes descrito acima é a direção planejada, não um serviço já implantado. Uma revisão publicada no espelho não significa que ela já foi portada.
 
-## Primeiro recorte em Rust
+## O que já foi portado para Rust
 
-A crate [`acbr-dfe`](https://github.com/kodexx-pro/acbr/tree/rust/crates/acbr-dfe) contém `validar_codigo_uf`, portada de `ValidarCodigoUF` da unit `ACBrDFeUtil`. A implementação foi comparada com a função Pascal extraída da revisão SVN **r49417**, em 3.003 entradas, na VPS Linux ARM64.
+| Crate | Escopo atual |
+| --- | --- |
+| [`acbr-dfe`](https://github.com/kodexx-pro/acbr/tree/rust/crates/acbr-dfe) | Validação de código de UF. |
+| [`acbr-util`](https://github.com/kodexx-pro/acbr/tree/rust/crates/acbr-util) | Filtros ASCII de números, letras e alfanuméricos. |
+| [`acbr-math`](https://github.com/kodexx-pro/acbr/tree/rust/crates/acbr-math) | Recorte de cálculo módulo 11. |
+| [`acbr-validador`](https://github.com/kodexx-pro/acbr/tree/rust/crates/acbr-validador) | CPF, CNPJ numérico e alfanumérico, GTIN e prefixo, UF, placa, PIS, RENAVAM, SUFRAMA, CAEPF, cartão, CNH, CEP, cheque e CNS. |
 
-A crate usa `no_std` e não possui dependências externas. Trata-se de uma prova de conceito: ainda não valida documentos fiscais completos e não foi homologada em outras plataformas ou dispositivos.
+**O ACBrValidador ainda não foi portado integralmente.** Inscrições estaduais por UF, e-mail, formatadores e opções configuráveis estão entre as partes pendentes. O port é experimental e ainda não foi homologado fiscalmente ou testado fora de Linux ARM64. O resultado de erro é uma categoria Rust e não reproduz os textos do Pascal.
 
-### Instalação
-
-Adicione ao `Cargo.toml` do seu projeto:
+### Instalação e uso
 
 ```toml
 [dependencies]
-acbr-dfe = { git = "https://github.com/kodexx-pro/acbr.git", branch = "rust" }
+acbr-validador = { git = "https://github.com/kodexx-pro/acbr.git", branch = "rust" }
 ```
 
 ```rust
-use acbr_dfe::validar_codigo_uf;
+use acbr_validador::{validar_cpf, validar_cnpj, validar_gtin, validar_cep};
 
-assert!(validar_codigo_uf(42)); // Santa Catarina
-assert!(!validar_codigo_uf(99));
+assert!(validar_cpf("529.982.247-25").is_ok());
+assert!(validar_cnpj("11.222.333/0001-81").is_ok());
+assert!(validar_gtin("7894900011517").is_ok());
+assert!(validar_cep("88000-000", "SC").is_ok());
 ```
 
-Para um build reproduzível, substitua `branch` por `rev` com um SHA específico e mantenha o `Cargo.lock` do seu projeto. A branch `rust` está em desenvolvimento e pode mudar.
+Para builds reproduzíveis, fixe uma revisão Git com `rev` e mantenha seu `Cargo.lock`. As funções portadas usam as opções padrão do ACBr; diferenças e limitações estão detalhadas na [documentação da branch Rust](https://github.com/kodexx-pro/acbr/tree/rust).
 
 ### Testes
 
@@ -65,14 +70,18 @@ cd acbr-rust
 cargo test --workspace
 ```
 
-Para reproduzir a comparação com Pascal, instale Python 3 e Free Pascal e aponte para um clone do espelho que contenha o commit fixado no [`NOTICE.md`](https://github.com/kodexx-pro/acbr/blob/rust/NOTICE.md):
+O teste diferencial exige Python 3, Free Pascal e um clone do espelho com os commits listados em [`NOTICE.md`](https://github.com/kodexx-pro/acbr/blob/rust/NOTICE.md):
 
 ```bash
 export ACBR_MIRROR_DIR=/caminho/para/o/clone-do-espelho
 python3 scripts/verify_differential.py
+python3 scripts/verify_util_differential.py
+python3 scripts/verify_validador_differential.py
 ```
 
-O teste compila a **função extraída** do fonte Pascal, não a unit ACBr completa. A referência retorna `false` para o código `91` devido a um delimitador ausente em sua constante; o port reproduz esse comportamento. Isso não estabelece a regra fiscal correta. Veja a [documentação da branch Rust](https://github.com/kodexx-pro/acbr/tree/rust) para detalhes.
+Os testes compilam funções ou métodos Pascal extraídos, usando adaptadores para dependências, e não a unit completa. Na última execução, foram comparados 3.003 códigos de UF, 9.000 filtros de texto e 58.056 entradas dos validadores. Os testes dos validadores comparam aceitação, não textos de erro ou eventos.
+
+O código `91` retorna `false` no primeiro port de `ValidarCodigoUF`, acompanhando um detalhe da constante original; isso não afirma que seja a regra fiscal correta. CEP e prefixos usam as tabelas do ACBr na revisão fixada, sem consulta online.
 
 ## Acompanhe o espelho
 
