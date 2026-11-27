@@ -1,9 +1,17 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
-//! Recortes de `ACBrValidador`: CPF, CNPJ e GTIN (SVN r49422).
+//! Validações, formatos e calculador portados de `ACBrValidador` (SVN r49422).
 //! Perfis padrões: não ajusta tamanho, não permite vazio, ignora `.`, `/` e `-`.
 #![no_std]
 extern crate alloc;
 use alloc::string::String;
+mod calculador;
+pub use calculador::*;
+mod componente;
+pub use componente::*;
+mod formato;
+pub use formato::*;
+mod ie;
+pub use ie::validar_ie;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ValidationError {
@@ -601,5 +609,89 @@ pub fn validar_prefixo_gtin(input: &str) -> Result<(), ValidationError> {
         Ok(())
     } else {
         Err(ValidationError::InvalidCharacter)
+    }
+}
+
+/// Valida endereço(s) com as regras do ACBr; listas aceitam `;`, `,` ou `|`.
+/// As regras históricas da referência não substituem a confirmação de entrega.
+pub fn validar_email(input: &str) -> Result<(), ValidationError> {
+    let delimiter = [';', ',', '|'].into_iter().find(|&c| input.contains(c));
+    if let Some(d) = delimiter {
+        // TStringList.DelimitedText: separador estrito e aspas duplas.
+        let mut current = String::new();
+        let mut chars = input.chars().peekable();
+        let mut quoted = false;
+        while let Some(c) = chars.next() {
+            if c == '"' {
+                if quoted && chars.peek() == Some(&'"') {
+                    chars.next();
+                    current.push('"');
+                } else if quoted {
+                    quoted = false;
+                } else if current.is_empty() {
+                    quoted = true;
+                } else {
+                    current.push(c);
+                }
+            } else if c == d && !quoted {
+                validar_email_unico(&current)?;
+                current.clear();
+            } else {
+                current.push(c);
+            }
+        }
+        validar_email_unico(&current)
+    } else {
+        validar_email_unico(input)
+    }
+}
+fn validar_email_unico(value: &str) -> Result<(), ValidationError> {
+    const INVALID: &str = " àâêôûãõáéíóúçüñýÀÂÊÔÛÃÕÁÉÍÓÚÇÜÑÝ*,;:\\|#$%&*§!()][{}<>˜ˆ´ªº+¹²³";
+    if value
+        .trim_matches(|c: char| c.is_ascii() && c <= ' ')
+        .is_empty()
+    {
+        return Err(ValidationError::Empty);
+    }
+    if value.len() < 8 {
+        return Err(ValidationError::InvalidLength);
+    }
+    if value.chars().any(|c| INVALID.contains(c)) {
+        return Err(ValidationError::InvalidCharacter);
+    }
+    let mut at = value.match_indices('@');
+    let pos = at
+        .next()
+        .map(|(i, _)| i)
+        .ok_or(ValidationError::InvalidCharacter)?;
+    if at.next().is_some()
+        || pos == 0
+        || pos + 1 >= value.len()
+        || value.starts_with('.')
+        || value.ends_with('.')
+        || value.contains("..")
+        || value.as_bytes()[pos - 1] == b'.'
+        || value.as_bytes()[pos + 1] == b'.'
+        || !value[pos + 1..].contains('.')
+    {
+        return Err(ValidationError::InvalidCharacter);
+    }
+    Ok(())
+}
+/// Escolhe CPF para menos de 12 caracteres alfanuméricos, como o ACBr.
+pub fn validar_cnpj_ou_cpf(input: &str) -> Result<(), ValidationError> {
+    if acbr_util::only_alpha_num(input).len() < 12 {
+        validar_cpf(input)
+    } else {
+        validar_cnpj(input)
+    }
+}
+/// Mantém os caracteres alfanuméricos apenas quando formam CPF ou CNPJ válido.
+pub fn only_cnpj_or_cpf(input: &str) -> String {
+    let n = acbr_util::only_alpha_num(input);
+    if validar_cnpj_ou_cpf(&n).is_ok() {
+        n
+    } else {
+        String::new()
     }
 }

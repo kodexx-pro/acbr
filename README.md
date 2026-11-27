@@ -9,9 +9,9 @@ Port independente e experimental de funcionalidades do Projeto ACBr. A fonte ori
 | `acbr-dfe` | Validação do código de UF em documentos fiscais. | `ACBrDFeUtil.pas`, SVN r49417. |
 | `acbr-util` | Filtros de dígitos, letras e alfanuméricos ASCII. | `ACBrUtil.Strings.pas`, SVN r49422. |
 | `acbr-math` | Recorte do módulo 11 com pesos crescentes e entrada ASCII numérica/alfanumérica. | `TACBrCalcDigito`, SVN r49422. |
-| `acbr-validador` | CPF, CNPJ numérico e alfanumérico, GTIN, prefixo GTIN, UF, placa, PIS, RENAVAM, SUFRAMA, CAEPF, cartão, CNH, CEP, cheque e CNS. | `ACBrValidador.pas`, SVN r49422. |
+| `acbr-validador` | Todos os 17 tipos de validação, incluindo inscrição estadual por UF e e-mail; formatação e calculador de dígitos. | `ACBrValidador.pas`, SVN r49422. |
 
-**O componente `ACBrValidador` ainda não está completo.** Estão pendentes, entre outros, inscrição estadual por UF, validação de e-mail, funções de formatação, API configurável e equivalência dos textos de erro. Não atribuímos a essas funções um estado de compatibilidade sem testes.
+**A paridade integral do componente ainda não está concluída.** Todos os tipos de validação foram implementados, assim como formatadores e opções principais. A revisão identificou pendências na reprodução das mensagens e eventos Delphi, `ExibeDigitoCorreto`, `DigitoCalculado`, `DoctoValidado` e equivalência em outras plataformas e Unicode. Consulte o [inventário e a revisão](docs/ACBRVALIDADOR_REVIEW.md).
 
 As crates são `no_std`; `acbr-util` e `acbr-validador` usam `alloc`. Foram testadas na VPS Linux ARM64; a compatibilidade em outros ambientes ainda não foi verificada. Os resultados são experimentais, sem homologação fiscal.
 
@@ -31,7 +31,7 @@ assert!(validar_gtin("7894900011517").is_ok());
 assert!(validar_cep("88000-000", "SC").is_ok());
 ```
 
-As funções retornam `Result<(), ValidationError>`. Os valores de erro são categorias próprias de Rust, não as mensagens do ACBr. O recorte usa as opções padrão do componente: remove `.`, `/` e `-`, converte letras ASCII para maiúsculas, não completa o tamanho nem permite valor vazio. Não generalize essa API para todas as configurações possíveis do ACBr. Para CNS, a implementação rejeita explicitamente caracteres não ASCII para evitar falhas em limites UTF-8; a equivalência com a referência nesses casos não foi estabelecida.
+As funções retornam `Result<(), ValidationError>`. A struct `Validador` permite selecionar tipo, documento, complemento, caracteres ignorados, ajuste de tamanho e vazio permitido; `validar_com_evento` recebe um callback Rust com a categoria de erro. Os valores de erro são categorias próprias de Rust, não as mensagens do ACBr. O recorte usa as opções padrão do componente: remove `.`, `/` e `-`, converte letras ASCII para maiúsculas, não completa o tamanho nem permite valor vazio. Não generalize essa API para todas as configurações possíveis do ACBr. Para CNS, a implementação rejeita explicitamente caracteres não ASCII para evitar falhas em limites UTF-8; a equivalência com a referência nesses casos não foi estabelecida.
 
 Crates Git podem ser fixadas por `rev` em vez de `branch`; mantenha `Cargo.lock` no projeto consumidor.
 
@@ -50,9 +50,20 @@ export ACBR_MIRROR_DIR=/caminho/para/o/clone-do-espelho
 python3 scripts/verify_differential.py
 python3 scripts/verify_util_differential.py
 python3 scripts/verify_validador_differential.py
+python3 scripts/verify_format_differential.py
+python3 scripts/verify_calc_differential.py
 ```
 
-Os scripts extraem e compilam funções/métodos Pascal fixados e usam pequenos adaptadores para suas dependências. **Não compilam a unit completa.** Para o validador, comparam o resultado válido/inválido, não as mensagens nem eventos. A última execução cobriu 3.003 entradas para código de UF, 9.000 filtros de texto e 58.056 entradas para validadores. Valores sintéticos são gerados deterministicamente; isso não garante equivalência para todas as entradas.
+Os scripts individuais compilam funções ou métodos Pascal extraídos com adaptadores. Para compilar a **unit completa**, é necessário Lazarus com as unidades de desenvolvimento, Free Pascal com FCL e os fontes originais disponíveis no espelho. Em Ubuntu 24.04, os pacotes usados na VPS são `fp-compiler`, `fp-units-fcl` e `lazarus-src-3.0` (com `--no-install-recommends`). Depois execute:
+
+```bash
+export ACBR_MIRROR_DIR=/caminho/para/o/clone-do-espelho
+# Opcional se o Lazarus estiver em outro caminho:
+export LAZARUS_DIR=/usr/lib/lazarus/3.0
+scripts/verify_full_component.sh
+```
+
+Na VPS Linux ARM64, a unit completa coincidiu com o Rust em **130.976 validações**, **15.000 formatações** e **12.000 cálculos**. A comparação de validação considera aceitação, não mensagens, dígito calculado ou eventos. O corpus é determinístico e não prova equivalência para toda entrada ou plataforma. A revisão detalhada está em [ACBRVALIDADOR_REVIEW.md](docs/ACBRVALIDADOR_REVIEW.md).
 
 ## Compatibilidade e origem
 

@@ -7,3 +7,4 @@ description = "Port incremental de validadores do ACBr"
 
 [dependencies]
 acbr-math = { path = "../acbr-math" }
+acbr-util = { path = "../acbr-util" }

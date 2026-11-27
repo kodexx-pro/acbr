@@ -19,4 +19,5 @@ name = "acbr-validador"
 version = "0.1.0"
 dependencies = [
  "acbr-math",
+ "acbr-util",
 ]
