@@ -42,7 +42,7 @@ flowchart LR
 | [`acbr-math`](https://github.com/kodexx-pro/acbr/tree/rust/crates/acbr-math) | Recorte de cálculo módulo 11. |
 | [`acbr-validador`](https://github.com/kodexx-pro/acbr/tree/rust/crates/acbr-validador) | Os 17 tipos do componente, incluindo inscrição estadual por UF e e-mail; formatadores e calculador de dígitos. |
 
-O ACBrValidador já oferece os 17 tipos, formatação, calculador e resultados detalhados com mensagem, documento, dígito calculado e callback. A equivalência foi testada contra uma revisão fixa do ACBr, mas não foi demonstrada para todas as entradas e plataformas. O port é experimental e foi testado em Linux ARM64. Consulte a [revisão detalhada](https://github.com/kodexx-pro/acbr/blob/rust/docs/ACBRVALIDADOR_REVIEW.md).
+O ACBrValidador já oferece os 17 tipos, formatação, calculador e resultados detalhados com mensagem, documento, dígito calculado e callback. O CI executa testes e verifica formatação em Linux e Windows. A comparação diferencial com a unit Pascal foi executada em Linux ARM64. O port é experimental e não tem homologação fiscal. Consulte a [revisão detalhada](https://github.com/kodexx-pro/acbr/blob/rust/docs/ACBRVALIDADOR_REVIEW.md).
 
 ### Instalação e uso
 
