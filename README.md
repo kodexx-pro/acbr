@@ -40,9 +40,9 @@ flowchart LR
 | [`acbr-dfe`](https://github.com/kodexx-pro/acbr/tree/rust/crates/acbr-dfe) | Validação de código de UF. |
 | [`acbr-util`](https://github.com/kodexx-pro/acbr/tree/rust/crates/acbr-util) | Filtros ASCII de números, letras e alfanuméricos. |
 | [`acbr-math`](https://github.com/kodexx-pro/acbr/tree/rust/crates/acbr-math) | Recorte de cálculo módulo 11. |
-| [`acbr-validador`](https://github.com/kodexx-pro/acbr/tree/rust/crates/acbr-validador) | CPF, CNPJ numérico e alfanumérico, GTIN e prefixo, UF, placa, PIS, RENAVAM, SUFRAMA, CAEPF, cartão, CNH, CEP, cheque e CNS. |
+| [`acbr-validador`](https://github.com/kodexx-pro/acbr/tree/rust/crates/acbr-validador) | Os 17 tipos do componente, incluindo inscrição estadual por UF e e-mail; formatadores e calculador de dígitos. |
 
-**O ACBrValidador ainda não foi portado integralmente.** Inscrições estaduais por UF, e-mail, formatadores e opções configuráveis estão entre as partes pendentes. O port é experimental e ainda não foi homologado fiscalmente ou testado fora de Linux ARM64. O resultado de erro é uma categoria Rust e não reproduz os textos do Pascal.
+**A paridade integral do ACBrValidador ainda não foi concluída.** Os 17 tipos, formatadores, calculador e opções principais foram implementados. A revisão identificou pendências nas mensagens e eventos Delphi e nas propriedades `DigitoCalculado`, `DoctoValidado` e `ExibeDigitoCorreto`. O port é experimental, sem homologação fiscal e testado apenas em Linux ARM64. Consulte a [revisão detalhada](https://github.com/kodexx-pro/acbr/blob/rust/docs/ACBRVALIDADOR_REVIEW.md).
 
 ### Instalação e uso
 
@@ -77,9 +77,11 @@ export ACBR_MIRROR_DIR=/caminho/para/o/clone-do-espelho
 python3 scripts/verify_differential.py
 python3 scripts/verify_util_differential.py
 python3 scripts/verify_validador_differential.py
+python3 scripts/verify_format_differential.py
+python3 scripts/verify_calc_differential.py
 ```
 
-Os testes compilam funções ou métodos Pascal extraídos, usando adaptadores para dependências, e não a unit completa. Na última execução, foram comparados 3.003 códigos de UF, 9.000 filtros de texto e 58.056 entradas dos validadores. Os testes dos validadores comparam aceitação, não textos de erro ou eventos.
+Os testes individuais compilam trechos Pascal extraídos com adaptadores. A rotina `scripts/verify_full_component.sh` também compila a unit original inteira com suas dependências; na VPS foram comparadas 130.976 validações, 15.000 formatações e 12.000 cálculos com o Rust. A comparação de validação verifica aceitação, não textos de erro, eventos ou dígitos calculados. Veja os pré-requisitos e limites na [revisão](https://github.com/kodexx-pro/acbr/blob/rust/docs/ACBRVALIDADOR_REVIEW.md).
 
 O código `91` retorna `false` no primeiro port de `ValidarCodigoUF`, acompanhando um detalhe da constante original; isso não afirma que seja a regra fiscal correta. CEP e prefixos usam as tabelas do ACBr na revisão fixada, sem consulta online.
 
