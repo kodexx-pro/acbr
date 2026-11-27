@@ -63,4 +63,4 @@ A primeira importação e publicação do histórico podem demorar. Se um envio 
 
 ## Estado da implantação
 
-**Publicação inicial em andamento.** A disponibilidade e a atualização da branch de fontes dependem da conclusão e validação do primeiro envio. A análise automática para Rust é uma etapa futura.
+**Espelhamento ativo.** O histórico inicial está publicado na branch `upstream/trunk2`, e a VPS verifica atualizações automaticamente. A análise automática para Rust é uma etapa futura.
