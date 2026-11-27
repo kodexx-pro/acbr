@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 //! Port do algoritmo e das tabelas de `ValidarIE` do ACBr SVN r49422.
 use super::{normalize, ValidationError};
-use alloc::{format, string::String, vec::Vec};
+use alloc::{
+    format,
+    string::{String, ToString},
+    vec::Vec,
+};
 
 const W: [[i32; 14]; 14] = [
     [0, 2, 3, 4, 5, 6, 7, 8, 9, 2, 3, 4, 5, 6],
@@ -281,4 +285,251 @@ pub(crate) fn validar_ie_com_ajuste(
         }
     }
     Ok(())
+}
+
+pub(crate) fn detalhes_ie(
+    input: &str,
+    uf: &str,
+    ajustar: bool,
+    mostrar: bool,
+) -> (String, String, String) {
+    let mut n = input.to_string();
+    if n.is_empty() {
+        return ("".into(), n, "".into());
+    }
+    if n == "ISENTO" {
+        return ("".into(), n, "".into());
+    }
+    if uf.is_empty() {
+        return ("Informe a UF no campo Complemento".into(), n, "".into());
+    }
+    if !matches!(
+        uf,
+        "AC" | "AL"
+            | "AP"
+            | "AM"
+            | "BA"
+            | "CE"
+            | "DF"
+            | "ES"
+            | "GO"
+            | "MA"
+            | "MT"
+            | "MS"
+            | "MG"
+            | "PA"
+            | "PB"
+            | "PR"
+            | "PE"
+            | "PI"
+            | "RJ"
+            | "RN"
+            | "RS"
+            | "RO"
+            | "RR"
+            | "SC"
+            | "SP"
+            | "SE"
+            | "TO"
+            | "EX"
+    ) {
+        return (format!("UF inválido: {}", uf), n, "".into());
+    }
+    if !n.is_ascii()
+        || n.len() < 2
+        || !n.as_bytes()[1..].iter().all(u8::is_ascii_digit)
+        || !(n.as_bytes()[0].is_ascii_digit() || n.as_bytes()[0] == b'P')
+    {
+        return (
+            "Caracteres inválidos na Inscrição Estadual".into(),
+            n,
+            "".into(),
+        );
+    }
+    let z = |s: &str, k: usize| -> String { format!("{:0>width$}", s, width = k) };
+    let mut prefix_error = false;
+    let c = match uf {
+        "AC" if n.len() == 9 => Config::new(9, &[X, D, D, D, D, D, D, "1", "0"]),
+        "AC" => Config::new(13, &[Y, X, D, D, D, D, D, D, D, D, D, "1", "0"])
+            .x("E", 11, 2)
+            .y("E", 11, 1),
+        "AL" => Config::new(9, &[X, D, D, D, D, D, D, "4", "2"]).x("BD", 11, 1),
+        "AP" => {
+            let mut a = Config::new(9, &[X, D, D, D, D, D, D, "3", "0"]).x("CE", 11, 1);
+            if n.as_str() >= "030170010" && n.as_str() <= "030190229" {
+                a.f = 1
+            } else if n.as_str() >= "030190230" {
+                a.xr = "E"
+            }
+            a
+        }
+        "AM" | "ES" | "SC" | "SE" => Config::new(9, &[X, D, D, D, D, D, D, D, D]),
+        "BA" => {
+            if n.len() < 9 {
+                n = z(&n, 9)
+            }
+            let m = if b"0123458".contains(&n.as_bytes()[1]) {
+                10
+            } else {
+                11
+            };
+            Config::new(9, &[X, Y, D, D, D, D, D, D, D])
+                .x("E", m, 2)
+                .y("E", m, 3)
+        }
+        "CE" => Config::new(9, &[X, D, D, D, D, D, D, D, "0"]),
+        "DF" => Config::new(13, &[Y, X, D, D, D, D, D, D, D, D, D, "7,8", "0"])
+            .x("E", 11, 2)
+            .y("E", 11, 1),
+        "GO" => {
+            let prefix = n.get(..2).and_then(|v| v.parse::<u8>().ok()).unwrap_or(0);
+            if !(prefix == 10 || prefix == 11 || (20..=29).contains(&prefix)) {
+                prefix_error = true;
+            }
+            let g = i32::from(n.as_str() >= "101031050" && n.as_str() <= "101199979");
+            Config::new(9, &[X, D, D, D, D, D, D, D, "1,2"]).g(g)
+        }
+        "MA" => Config::new(9, &[X, D, D, D, D, D, D, "2", "1"]),
+        "MT" => {
+            if n.len() == 9 {
+                n = z(&n, 11)
+            }
+            Config::new(11, &[X, D, D, D, D, D, D, D, D, D, D])
+        }
+        "MS" => Config::new(9, &[X, D, D, D, D, D, D, "0,8", "2,5"]),
+        "MG" => Config::new(13, &[Y, X, D, D, D, D, D, D, D, D, D, D, D])
+            .x("AE", 10, 10)
+            .y("E", 11, 11),
+        "PA" => Config::new(9, &[X, D, D, D, D, D, D, "5,6,7,8,9", "1,7"]),
+        "PB" => Config::new(9, &[X, D, D, D, D, D, D, "6", "1"]),
+        "PR" => Config::new(10, &[Y, X, D, D, D, D, D, D, D, D])
+            .x("E", 11, 9)
+            .y("E", 11, 8),
+        "PE" if n.len() == 14 => {
+            Config::new(14, &[X, D, D, D, D, D, D, D, D, D, D, "1-9", "8", "1"])
+                .x("E", 11, 7)
+                .f(1)
+        }
+        "PE" => Config::new(9, &[Y, X, D, D, D, D, D, D, D])
+            .x("E", 11, 14)
+            .y("E", 11, 7),
+        "PI" => Config::new(9, &[X, D, D, D, D, D, D, "9", "1"]),
+        "RJ" => Config::new(8, &[X, D, D, D, D, D, D, "1,7,8,9"]).x("E", 11, 8),
+        "RN" if n.len() == 9 => Config::new(9, &[X, D, D, D, D, D, D, "0", "2"]).x("BD", 11, 1),
+        "RN" => Config::new(10, &[X, D, D, D, D, D, D, D, "0", "2"]).x("BD", 11, 11),
+        "RS" => Config::new(10, &[X, D, D, D, D, D, D, D, D, D]),
+        "RO" if n.len() == 9 => Config::new(9, &[X, D, D, D, D, D, D, D, "1-9"])
+            .x("E", 11, 4)
+            .f(1),
+        "RO" => Config::new(14, &[X, D, D, D, D, D, D, D, D, D, D, D, D, D]).f(1),
+        "RR" => Config::new(9, &[X, D, D, D, D, D, D, "4", "2"]).x("D", 9, 5),
+        "SP" if n.starts_with('P') => {
+            Config::new(13, &[D, D, D, X, D, D, D, D, D, D, D, D, "P"]).x("D", 11, 12)
+        }
+        "SP" => Config::new(12, &[Y, D, D, X, D, D, D, D, D, D, D, D])
+            .x("D", 11, 12)
+            .y("D", 11, 13),
+        "TO" if n.len() == 11 => {
+            Config::new(11, &[X, D, D, D, D, D, D, "1,2,3,9", "0,9", "9", "2"]).x("E", 11, 6)
+        }
+        "TO" => Config::new(9, &[X, D, D, D, D, D, D, D, D]),
+        _ => Config::new(0, &[]),
+    };
+    if ajustar {
+        n = z(&n, c.len).chars().take(c.len).collect();
+    }
+    if n.len() != c.len || c.len == 0 {
+        let message = format!("Insc.Estadual inválida para {} Tamanho inválido: Esperado {} caracteres, mas foram digitados somente {} caracteres.",uf,c.len,n.len());
+        return (message, n.chars().take(14).collect(), String::new());
+    }
+    let mut digits = [b' '; 14];
+    digits[14 - n.len()..].copy_from_slice(n.as_bytes());
+    let mut dx = 0i32;
+    let mut dy = 0i32;
+    for (pos, &ch) in digits.iter().enumerate() {
+        let idx = 13 - pos;
+        let pat = c.p.get(idx).copied().unwrap_or("");
+        let ok = match pat {
+            "" => ch == b' ',
+            "DVX" => {
+                dx = i32::from(ch.saturating_sub(b'0'));
+                ch.is_ascii_digit()
+            }
+            "DVY" => {
+                dy = i32::from(ch.saturating_sub(b'0'));
+                ch.is_ascii_digit()
+            }
+            "0-9" => ch.is_ascii_digit(),
+            "1-9" => (b'1'..=b'9').contains(&ch),
+            _ => pat.as_bytes().contains(&ch),
+        };
+        if !ok {
+            return (
+                format!(
+                    "Insc.Estadual inválida para {} Dígito {} deveria ser {} ",
+                    uf,
+                    pos + 1 - (14 - c.len),
+                    pat
+                ),
+                n,
+                String::new(),
+            );
+        }
+    }
+    let mut calculated = String::new();
+    for (rot, md, tp, expected) in [(c.xr, c.xm, c.xt, dx), (c.yr, c.ym, c.yt, dy)] {
+        if tp == 0 {
+            break;
+        }
+        let mut sum = 0;
+        let mut extra = 0;
+        for (pos, &ch) in digits.iter().enumerate() {
+            if ch.is_ascii_digit() {
+                let m = i32::from(ch - b'0') * W[tp - 1][13 - pos];
+                sum += m;
+                extra += m / 10;
+            }
+        }
+        if rot.contains('A') {
+            sum += extra
+        } else if rot.contains('B') {
+            sum *= 10
+        } else if rot.contains('C') {
+            sum += 5 + 4 * c.f
+        }
+        let mut dv = sum % md;
+        if rot.contains('E') {
+            dv = md - dv
+        }
+        if dv == 10 {
+            dv = c.g
+        } else if dv == 11 {
+            dv = c.f
+        }
+        calculated = dv.to_string();
+        if dv != expected {
+            let suffix = if mostrar {
+                format!(".. Calculado: {}", calculated)
+            } else {
+                String::new()
+            };
+            return (
+                format!(
+                    "Insc.Estadual inválida para {} Dígito verificador inválido.{}",
+                    uf, suffix
+                ),
+                n,
+                calculated,
+            );
+        }
+    }
+    let msg = if prefix_error {
+        format!(
+            "Insc.Estadual inválida para {} Prefixo IE InvÃ¡lido 10 ou 11 / 20 a 29",
+            uf
+        )
+    } else {
+        String::new()
+    };
+    (msg, n, calculated)
 }

@@ -50,7 +50,7 @@ impl Default for Validador {
     }
 }
 impl Validador {
-    fn limpo(&self) -> String {
+    pub(crate) fn limpo(&self) -> String {
         if self.tipo == TipoDocumento::Email {
             return self
                 .documento
@@ -75,7 +75,7 @@ impl Validador {
             };
         }
         if self.tipo == TipoDocumento::Email {
-            return validar_email(&self.documento);
+            return crate::validar_email_unico(&self.documento);
         }
         // The public validators normalize these punctuation marks by default;
         // if a custom ignore set leaves one present, the Pascal numeric tests reject it.

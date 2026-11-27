@@ -6,6 +6,8 @@ extern crate alloc;
 use alloc::string::String;
 mod calculador;
 pub use calculador::*;
+mod detalhes;
+pub use detalhes::*;
 mod componente;
 pub use componente::*;
 mod formato;
@@ -694,4 +696,8 @@ pub fn only_cnpj_or_cpf(input: &str) -> String {
     } else {
         String::new()
     }
+}
+
+fn acbr_math_bridge(b: &[u8], start: u8, end: u8) -> u8 {
+    acbr_math::modulo11_ascii(b, start, end).expect("documento ASCII normalizado")
 }

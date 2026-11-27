@@ -11,7 +11,7 @@ Port independente e experimental de funcionalidades do Projeto ACBr. A fonte ori
 | `acbr-math` | Recorte do módulo 11 com pesos crescentes e entrada ASCII numérica/alfanumérica. | `TACBrCalcDigito`, SVN r49422. |
 | `acbr-validador` | Todos os 17 tipos de validação, incluindo inscrição estadual por UF e e-mail; formatação e calculador de dígitos. | `ACBrValidador.pas`, SVN r49422. |
 
-**A paridade integral do componente ainda não está concluída.** Todos os tipos de validação foram implementados, assim como formatadores e opções principais. A revisão identificou pendências na reprodução das mensagens e eventos Delphi, `ExibeDigitoCorreto`, `DigitoCalculado`, `DoctoValidado` e equivalência em outras plataformas e Unicode. Consulte o [inventário e a revisão](docs/ACBRVALIDADOR_REVIEW.md).
+O componente oferece os 17 tipos, formatadores, calculador, opções e resultados detalhados com mensagem, documento, dígito e callback. A comparação cobre a revisão fixada do ACBr; paridade integral em todas as entradas e plataformas ainda não está demonstrada. Consulte a [revisão](docs/ACBRVALIDADOR_REVIEW.md).
 
 As crates são `no_std`; `acbr-util` e `acbr-validador` usam `alloc`. Foram testadas na VPS Linux ARM64; a compatibilidade em outros ambientes ainda não foi verificada. Os resultados são experimentais, sem homologação fiscal.
 
@@ -32,6 +32,31 @@ assert!(validar_cep("88000-000", "SC").is_ok());
 ```
 
 As funções retornam `Result<(), ValidationError>`. A struct `Validador` permite selecionar tipo, documento, complemento, caracteres ignorados, ajuste de tamanho e vazio permitido; `validar_com_evento` recebe um callback Rust com a categoria de erro. Os valores de erro são categorias próprias de Rust, não as mensagens do ACBr. O recorte usa as opções padrão do componente: remove `.`, `/` e `-`, converte letras ASCII para maiúsculas, não completa o tamanho nem permite valor vazio. Não generalize essa API para todas as configurações possíveis do ACBr. Para CNS, a implementação rejeita explicitamente caracteres não ASCII para evitar falhas em limites UTF-8; a equivalência com a referência nesses casos não foi estabelecida.
+
+Para obter as propriedades equivalentes a `MsgErro`, `DoctoValidado` e `DigitoCalculado`, com a opção equivalente a `ExibeDigitoCorreto`:
+
+```rust
+use acbr_validador::{TipoDocumento, Validador};
+
+let validador = Validador {
+    tipo: TipoDocumento::Cpf,
+    documento: "529.982.247-24".into(),
+    ..Default::default()
+};
+let resultado = validador.validar_detalhado(true);
+assert!(!resultado.valido);
+assert_eq!(resultado.documento_validado, "52998224724");
+assert_eq!(resultado.digito_calculado, "25");
+assert_eq!(resultado.mensagem, "CPF inválido... Dígito calculado: 25");
+
+// O callback recebe a mensagem quando a validação falha.
+let resultado = validador.validar_detalhado_com_evento(true, |mensagem| {
+    eprintln!("{mensagem}");
+});
+assert!(resultado.is_err());
+```
+
+O callback é texto UTF-8 e a falha é retornada em `Result`, preservando o resultado detalhado; não são exceções nem eventos binários Delphi. A categoria `erro` é uma classificação Rust e não substitui a mensagem. O comportamento de codificação de textos pode depender da plataforma de origem.
 
 Crates Git podem ser fixadas por `rev` em vez de `branch`; mantenha `Cargo.lock` no projeto consumidor.
 
@@ -63,7 +88,7 @@ export LAZARUS_DIR=/usr/lib/lazarus/3.0
 scripts/verify_full_component.sh
 ```
 
-Na VPS Linux ARM64, a unit completa coincidiu com o Rust em **130.976 validações**, **15.000 formatações** e **12.000 cálculos**. A comparação de validação considera aceitação, não mensagens, dígito calculado ou eventos. O corpus é determinístico e não prova equivalência para toda entrada ou plataforma. A revisão detalhada está em [ACBRVALIDADOR_REVIEW.md](docs/ACBRVALIDADOR_REVIEW.md).
+Na VPS Linux ARM64, a unit completa coincidiu com o Rust em **130.976 validações**, **15.000 formatações** e **12.000 cálculos** e **20.210 resultados detalhados**, incluindo mensagens, documento, dígito e callback. O corpus é determinístico e não prova equivalência para toda entrada ou plataforma. A revisão detalhada está em [ACBRVALIDADOR_REVIEW.md](docs/ACBRVALIDADOR_REVIEW.md).
 
 ## Compatibilidade e origem
 
