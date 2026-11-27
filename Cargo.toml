@@ -1,0 +1,3 @@
+[workspace]
+members = ["crates/acbr-dfe"]
+resolver = "2"

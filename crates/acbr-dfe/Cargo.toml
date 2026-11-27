@@ -1,0 +1,8 @@
+[package]
+name = "acbr-dfe"
+version = "0.1.0"
+edition = "2021"
+license = "LGPL-2.1-or-later"
+description = "Port incremental e rastreável de utilidades ACBr para documentos fiscais"
+
+[dependencies]
