@@ -42,7 +42,7 @@ flowchart LR
 | [`acbr-math`](https://github.com/kodexx-pro/acbr/tree/rust/crates/acbr-math) | Recorte de cálculo módulo 11. |
 | [`acbr-validador`](https://github.com/kodexx-pro/acbr/tree/rust/crates/acbr-validador) | Os 17 tipos do componente, incluindo inscrição estadual por UF e e-mail; formatadores e calculador de dígitos. |
 
-**A paridade integral do ACBrValidador ainda não foi concluída.** Os 17 tipos, formatadores, calculador e opções principais foram implementados. A revisão identificou pendências nas mensagens e eventos Delphi e nas propriedades `DigitoCalculado`, `DoctoValidado` e `ExibeDigitoCorreto`. O port é experimental, sem homologação fiscal e testado apenas em Linux ARM64. Consulte a [revisão detalhada](https://github.com/kodexx-pro/acbr/blob/rust/docs/ACBRVALIDADOR_REVIEW.md).
+O ACBrValidador já oferece os 17 tipos, formatação, calculador e resultados detalhados com mensagem, documento, dígito calculado e callback. A equivalência foi testada contra uma revisão fixa do ACBr, mas não foi demonstrada para todas as entradas e plataformas. O port é experimental e foi testado em Linux ARM64. Consulte a [revisão detalhada](https://github.com/kodexx-pro/acbr/blob/rust/docs/ACBRVALIDADOR_REVIEW.md).
 
 ### Instalação e uso
 
@@ -59,6 +59,8 @@ assert!(validar_cnpj("11.222.333/0001-81").is_ok());
 assert!(validar_gtin("7894900011517").is_ok());
 assert!(validar_cep("88000-000", "SC").is_ok());
 ```
+
+A API `Validador::validar_detalhado` expõe mensagem, documento e dígito; `validar_detalhado_com_evento` chama um callback e retorna `Result`. Veja os exemplos na [branch Rust](https://github.com/kodexx-pro/acbr/tree/rust).
 
 Para builds reproduzíveis, fixe uma revisão Git com `rev` e mantenha seu `Cargo.lock`. As funções portadas usam as opções padrão do ACBr; diferenças e limitações estão detalhadas na [documentação da branch Rust](https://github.com/kodexx-pro/acbr/tree/rust).
 
@@ -81,7 +83,7 @@ python3 scripts/verify_format_differential.py
 python3 scripts/verify_calc_differential.py
 ```
 
-Os testes individuais compilam trechos Pascal extraídos com adaptadores. A rotina `scripts/verify_full_component.sh` também compila a unit original inteira com suas dependências; na VPS foram comparadas 130.976 validações, 15.000 formatações e 12.000 cálculos com o Rust. A comparação de validação verifica aceitação, não textos de erro, eventos ou dígitos calculados. Veja os pré-requisitos e limites na [revisão](https://github.com/kodexx-pro/acbr/blob/rust/docs/ACBRVALIDADOR_REVIEW.md).
+Os testes individuais compilam trechos Pascal extraídos com adaptadores. A rotina `scripts/verify_full_component.sh` também compila a unit original inteira com suas dependências; na VPS foram comparadas 130.976 validações, 15.000 formatações, 12.000 cálculos e 20.210 resultados detalhados, incluindo mensagens, documento, dígito e callback. Veja os pré-requisitos e limites na [revisão](https://github.com/kodexx-pro/acbr/blob/rust/docs/ACBRVALIDADOR_REVIEW.md).
 
 O código `91` retorna `false` no primeiro port de `ValidarCodigoUF`, acompanhando um detalhe da constante original; isso não afirma que seja a regra fiscal correta. CEP e prefixos usam as tabelas do ACBr na revisão fixada, sem consulta online.
 
