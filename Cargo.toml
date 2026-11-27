@@ -1,3 +1,3 @@
 [workspace]
-members = ["crates/acbr-dfe"]
+members = ["crates/acbr-dfe", "crates/acbr-util", "crates/acbr-math", "crates/acbr-validador"]
 resolver = "2"

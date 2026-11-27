@@ -5,3 +5,18 @@ version = 3
 [[package]]
 name = "acbr-dfe"
 version = "0.1.0"
+
+[[package]]
+name = "acbr-math"
+version = "0.1.0"
+
+[[package]]
+name = "acbr-util"
+version = "0.1.0"
+
+[[package]]
+name = "acbr-validador"
+version = "0.1.0"
+dependencies = [
+ "acbr-math",
+]

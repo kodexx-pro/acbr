@@ -1,0 +1,9 @@
+[package]
+name = "acbr-validador"
+version = "0.1.0"
+edition = "2021"
+license = "LGPL-2.1-or-later"
+description = "Port incremental de validadores do ACBr"
+
+[dependencies]
+acbr-math = { path = "../acbr-math" }
