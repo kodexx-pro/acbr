@@ -38,7 +38,7 @@ flowchart LR
 | Crate | Escopo atual |
 | --- | --- |
 | [`acbr-dfe`](https://github.com/kodexx-pro/acbr/tree/rust/crates/acbr-dfe) | Validação de código de UF. |
-| [`acbr-util`](https://github.com/kodexx-pro/acbr/tree/rust/crates/acbr-util) | Filtros ASCII de números, letras e alfanuméricos. |
+| [`acbr-util`](https://github.com/kodexx-pro/acbr/tree/rust/crates/acbr-util) | Filtros/classificadores ASCII, padding e busca/remoção de substrings; a unit completa ainda não foi portada. |
 | [`acbr-math`](https://github.com/kodexx-pro/acbr/tree/rust/crates/acbr-math) | Recorte de cálculo módulo 11. |
 | [`acbr-validador`](https://github.com/kodexx-pro/acbr/tree/rust/crates/acbr-validador) | Os 17 tipos do componente, incluindo inscrição estadual por UF e e-mail; formatadores e calculador de dígitos. |
 
