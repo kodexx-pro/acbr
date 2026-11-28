@@ -39,7 +39,7 @@ flowchart LR
 | --- | --- |
 | [`acbr-dfe`](https://github.com/kodexx-pro/acbr/tree/rust/crates/acbr-dfe) | Validação de código de UF. |
 | [`acbr-util`](https://github.com/kodexx-pro/acbr/tree/rust/crates/acbr-util) | Filtros e classificadores ASCII, padding, busca/remoção e manipulação de linhas; conversões CP1252/Windows-125x/CP437/850/852/866/ISO suportadas e equivalentes Rust para rotinas de lista; codepages DOS e ABI `TStringList` não são compatíveis diretamente. |
-| [`acbr-math`](https://github.com/kodexx-pro/acbr/tree/rust/crates/acbr-math) | Recorte de cálculo módulo 11. |
+| [`acbr-math`](https://github.com/kodexx-pro/acbr/tree/rust/crates/acbr-math) | Port de `ACBrUtil.Math`: arredondamento, comparação, bits, binário, BCD, endian, hexadecimal e escapes binários; inclui módulo 11. |
 | [`acbr-validador`](https://github.com/kodexx-pro/acbr/tree/rust/crates/acbr-validador) | Os 17 tipos do componente, incluindo inscrição estadual por UF e e-mail; formatadores e calculador de dígitos. |
 
 O ACBrValidador já oferece os 17 tipos, formatação, calculador e resultados detalhados com mensagem, documento, dígito calculado e callback. O CI executa testes e verifica formatação em Linux e Windows. A comparação diferencial com a unit Pascal foi executada em Linux ARM64. O port é experimental e não tem homologação fiscal. Consulte a [revisão detalhada](https://github.com/kodexx-pro/acbr/blob/rust/docs/ACBRVALIDADOR_REVIEW.md).
