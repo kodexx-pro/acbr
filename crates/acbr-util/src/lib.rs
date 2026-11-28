@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
-//! Filtros ASCII de `ACBrUtil.Strings` (SVN r49422).
+//! Port das rotinas portáveis de strings da `ACBrUtil.Strings` (SVN r49422).
 #![no_std]
 extern crate alloc;
 use alloc::string::{String, ToString};
@@ -55,7 +55,7 @@ pub fn char_is_binary(c: char) -> bool {
 }
 
 pub fn char_is_base64(c: char) -> bool {
-    c.is_ascii_alphanumeric() && c.is_ascii() || matches!(c, '+' | '/')
+    c.is_ascii_alphanumeric() || matches!(c, '+' | '/')
 }
 
 /// `StrIsAlpha`; como na unit Pascal, a string vazia retorna `true`.
@@ -196,4 +196,213 @@ pub fn tb_str_zero(text: &str, len: usize) -> String {
     out.extend(core::iter::repeat('0').take(len - text.chars().count()));
     out.push_str(text);
     out
+}
+
+pub fn left_str(s: &str, len: usize) -> String {
+    s.chars().take(len).collect()
+}
+
+pub fn right_str(s: &str, len: usize) -> String {
+    let count = s.chars().count();
+    s.chars().skip(count.saturating_sub(len)).collect()
+}
+
+pub fn pad_space(s: &str, len: usize, separator: &str, fill: char, remove_spaces: bool) -> String {
+    let mut value = if remove_spaces {
+        s.trim().into()
+    } else {
+        s.into()
+    };
+    let sep = if separator.is_empty() { " " } else { separator };
+    while value.chars().count() < len {
+        value.push_str(sep);
+    }
+    pad_right(&value, len, fill)
+}
+
+pub fn if_empty_then<'a>(value: &'a str, default: &'a str, trim: bool) -> &'a str {
+    if (if trim { value.trim() } else { value }).is_empty() {
+        default
+    } else {
+        value
+    }
+}
+
+pub fn remove_double_spaces(s: &str) -> String {
+    let mut out = alloc::string::String::new();
+    let mut was_space = false;
+    for c in s.trim().chars() {
+        if c == ' ' {
+            if !was_space {
+                out.push(c);
+            }
+            was_space = true;
+        } else {
+            was_space = false;
+            out.push(c);
+        }
+    }
+    out
+}
+
+pub fn remove_line_break_final(text: &str, line_break: &str) -> String {
+    let suffix = if line_break.is_empty() {
+        if cfg!(windows) {
+            "\r\n"
+        } else {
+            "\n"
+        }
+    } else {
+        line_break
+    };
+    text.strip_suffix(suffix).unwrap_or(text).into()
+}
+
+pub fn tira_pontos(text: &str) -> String {
+    text.chars()
+        .filter(|c| !matches!(c, '/' | ',' | '-' | '.' | ')' | '(' | ' '))
+        .collect()
+}
+
+pub fn space(len: usize) -> String {
+    alloc::string::String::from_iter(core::iter::repeat(' ').take(len))
+}
+pub fn linha_simples(len: usize) -> String {
+    alloc::string::String::from_iter(core::iter::repeat('-').take(len))
+}
+pub fn linha_dupla(len: usize) -> String {
+    alloc::string::String::from_iter(core::iter::repeat('=').take(len))
+}
+
+pub fn match_text(text: &str, values: &[&str]) -> bool {
+    values.iter().any(|value| *value == text)
+}
+
+pub fn find_delimiter_in_text(text: &str, delimiters: &str) -> Option<char> {
+    let delimiters = if delimiters.is_empty() {
+        ";,|"
+    } else {
+        delimiters
+    };
+    delimiters.chars().find(|c| text.contains(*c))
+}
+
+pub fn split(delimiter: char, text: &str) -> alloc::vec::Vec<String> {
+    text.split(delimiter).map(ToString::to_string).collect()
+}
+
+pub fn split_to_string(parts: &[&str], delimiter: &str) -> String {
+    parts.join(delimiter)
+}
+
+pub fn retornar_conteudo_entre(
+    text: &str,
+    start: &str,
+    end: &str,
+    include_markers: bool,
+) -> Option<String> {
+    let first = text.find(start)?;
+    let content_start = first + start.len();
+    let last = text[content_start..].find(end)? + content_start;
+    if include_markers {
+        Some(text[first..last + end.len()].into())
+    } else {
+        Some(text[content_start..last].into())
+    }
+}
+
+/// Divide uma lista delimitada respeitando campos entre aspas; aspas externas são removidas.
+pub fn add_delimited_text_to_list(
+    text: &str,
+    delimiter: char,
+    quote: char,
+) -> alloc::vec::Vec<String> {
+    if text.is_empty() {
+        return alloc::vec::Vec::new();
+    }
+    let mut values = alloc::vec::Vec::new();
+    let mut current = alloc::string::String::new();
+    let mut quoted = false;
+    let mut chars = text.chars().peekable();
+    while let Some(c) = chars.next() {
+        if quote != '\0' && c == quote {
+            if quoted && chars.peek() == Some(&quote) {
+                current.push(quote);
+                chars.next();
+            } else {
+                quoted = !quoted;
+            }
+        } else if c == delimiter && !quoted {
+            values.push(core::mem::take(&mut current));
+        } else {
+            current.push(c);
+        }
+    }
+    values.push(current);
+    values
+}
+
+pub fn change_line_break(text: &str, replacement: &str) -> String {
+    if text.trim().is_empty() {
+        return text.into();
+    }
+    let normalized = text.replace("\r\n", "\n").replace('\r', "\n");
+    normalized.replace('\n', replacement)
+}
+
+/// Replica `SubStrEmSubStr`: verifica se algum item delimitado por `|` está presente.
+pub fn substr_em_substr(search_in: &str, candidates: &str) -> bool {
+    candidates
+        .split('|')
+        .filter(|s| !s.is_empty())
+        .any(|candidate| search_in.contains(candidate))
+}
+
+/// Quebra texto em linhas preservando palavras sempre que possível.
+pub fn quebra_linhas(text: &str, columns: usize, break_char: char) -> String {
+    if columns == 0 {
+        return text.into();
+    }
+    let mut result = alloc::string::String::new();
+    for (line_index, source_line) in text.lines().enumerate() {
+        if line_index > 0 {
+            result.push('\n');
+        }
+        let mut current = alloc::string::String::new();
+        for word in source_line.split_inclusive(break_char) {
+            let word = word.trim_end_matches(break_char);
+            if !current.is_empty() && current.chars().count() + 1 + word.chars().count() > columns {
+                result.push_str(current.trim_end());
+                result.push('\n');
+                current.clear();
+            }
+            if !current.is_empty() {
+                current.push(' ');
+            }
+            current.push_str(word);
+            if word.chars().count() > columns {
+                result.push_str(&current);
+                result.push('\n');
+                current.clear();
+            }
+        }
+        result.push_str(&current);
+    }
+    result
+}
+
+/// Translitera o conjunto comum de letras acentuadas latinas para ASCII.
+pub fn tira_acentos(text: &str) -> String {
+    text.chars()
+        .map(|c| match c {
+            'á' | 'à' | 'â' | 'ã' | 'ä' | 'Á' | 'À' | 'Â' | 'Ã' | 'Ä' => 'a',
+            'é' | 'è' | 'ê' | 'ë' | 'É' | 'È' | 'Ê' | 'Ë' => 'e',
+            'í' | 'ì' | 'î' | 'ï' | 'Í' | 'Ì' | 'Î' | 'Ï' => 'i',
+            'ó' | 'ò' | 'ô' | 'õ' | 'ö' | 'Ó' | 'Ò' | 'Ô' | 'Õ' | 'Ö' => 'o',
+            'ú' | 'ù' | 'û' | 'ü' | 'Ú' | 'Ù' | 'Û' | 'Ü' => 'u',
+            'ç' | 'Ç' => 'c',
+            'ñ' | 'Ñ' => 'n',
+            _ => c,
+        })
+        .collect()
 }
