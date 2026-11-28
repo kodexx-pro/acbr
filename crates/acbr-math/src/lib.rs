@@ -171,7 +171,7 @@ pub fn int_to_bin(mut value: i32, digits: usize) -> alloc::string::String {
         }
         value >>= 1;
     }
-    unsafe { alloc::string::String::from_utf8_unchecked(out) }
+    alloc::string::String::from_utf8(out).expect("saída binária ASCII válida")
 }
 
 /// Converte uma representação binária; caracteres diferentes de `1` contam como zero, como no Pascal.
@@ -205,7 +205,7 @@ pub fn bcd_to_asc(input: &[u8]) -> alloc::string::String {
 
 /// Codifica dígitos em BCD, preenchendo à esquerda; entrada excedente preserva o prefixo ACBr.
 pub fn asc_to_bcd(input: &str, bytes: usize) -> Result<alloc::vec::Vec<u8>, MathError> {
-    if !input.bytes().all(|b| b.is_ascii_digit()) {
+    if input.is_empty() || !input.bytes().all(|b| b.is_ascii_digit()) {
         return Err(MathError::InvalidDigit);
     }
     let width = bytes.checked_mul(2).ok_or(MathError::Overflow)?;
@@ -251,7 +251,7 @@ pub fn be_bytes_to_int(bytes: &[u8]) -> Result<i32, MathError> {
 
 /// Decodifica pares hexadecimais; um nibble final isolado é ignorado como na unit Pascal.
 pub fn hex_to_ascii(input: &str) -> Result<alloc::vec::Vec<u8>, MathError> {
-    let trimmed = input.trim();
+    let trimmed = input.trim_matches(|c: char| c.is_ascii() && c <= ' ');
     let bytes = trimmed.as_bytes();
     let mut out = alloc::vec::Vec::with_capacity(bytes.len() / 2);
     let mut i = 0;
@@ -351,6 +351,7 @@ mod full_math_tests {
         assert_eq!(bcd_to_asc(&[0x01, 0x47, 0x84, 0x01, 0x70]), "0147840170");
         assert_eq!(asc_to_bcd("123456", 3), Ok(alloc::vec![0x12, 0x34, 0x56]));
         assert_eq!(asc_to_bcd("12x", 2), Err(MathError::InvalidDigit));
+        assert_eq!(asc_to_bcd("", 2), Err(MathError::InvalidDigit));
         assert_eq!(int_to_le_bytes(106, 2), Ok(alloc::vec![106, 0]));
         assert_eq!(le_bytes_to_int(&[106, 0]), Ok(106));
         assert_eq!(int_to_be_bytes(106, 2), Ok(alloc::vec![0, 106]));
