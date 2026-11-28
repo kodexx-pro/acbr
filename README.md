@@ -7,13 +7,13 @@ Port independente e experimental de funcionalidades do Projeto ACBr. A fonte ori
 | Crate | Recorte implementado | Referência |
 | --- | --- | --- |
 | `acbr-dfe` | Validação do código de UF em documentos fiscais. | `ACBrDFeUtil.pas`, SVN r49417. |
-| `acbr-util` | Filtros de dígitos, letras e alfanuméricos ASCII. | `ACBrUtil.Strings.pas`, SVN r49422. |
+| `acbr-util` | Filtros e classificadores ASCII, padding, remoção e busca de substrings e preenchimento numérico. Ainda não cobre toda a unit original. | `ACBrUtil.Strings.pas`, SVN r49422. |
 | `acbr-math` | Recorte do módulo 11 com pesos crescentes e entrada ASCII numérica/alfanumérica. | `TACBrCalcDigito`, SVN r49422. |
 | `acbr-validador` | Todos os 17 tipos de validação, incluindo inscrição estadual por UF e e-mail; formatação e calculador de dígitos. | `ACBrValidador.pas`, SVN r49422. |
 
 O componente oferece os 17 tipos, formatadores, calculador, opções e resultados detalhados com mensagem, documento, dígito e callback. A comparação cobre a revisão fixada do ACBr; paridade integral em todas as entradas e plataformas ainda não está demonstrada. Consulte a [revisão](docs/ACBRVALIDADOR_REVIEW.md).
 
-As crates são `no_std`; `acbr-util` e `acbr-validador` usam `alloc`. O CI executa `cargo test` e verifica formatação em Linux e Windows a cada push e pull request. A validação diferencial contra a unit Pascal completa foi executada na VPS Linux ARM64. Os resultados são experimentais, sem homologação fiscal.
+`acbr-util` agora inclui filtros e classificadores ASCII, padding, busca/remoção de substrings e preenchimento de zeros. Rotinas de codificação, conversão de charset, manipulação de linhas e acentos da unit original ainda estão pendentes. As crates são `no_std`; `acbr-util` e `acbr-validador` usam `alloc`. O CI executa `cargo test` e verifica formatação em Linux e Windows a cada push e pull request. A validação diferencial contra a unit Pascal completa foi executada na VPS Linux ARM64. Os resultados são experimentais, sem homologação fiscal.
 
 ## Uso
 
