@@ -129,3 +129,8 @@ Commit `9f42f9a3375cd11e369be1ecdcc570b7dcaff814`
 ```
 
 As funções `CharIsAlpha`, `CharIsNum` e `CharIsAlphaNum` na origem contêm referências ao projeto JEDI Code Library (JCL). Os créditos constam nos comentários originais em `ACBrUtil.Strings.pas`.
+
+
+### `Fontes/ACBrComum/ACBrUtil.Math.pas`
+
+Revisão SVN r49422, commit `9f42f9a3375cd11e369be1ecdcc570b7dcaff814`. O cabeçalho declara direitos autorais reservados © 2020 Daniel Simoes de Almeida e licença LGPL 2.1 ou posterior. A unit cita fontes adicionais nos comentários de `RoundABNT`, manipulação de bits e `IntToBin`; os créditos e referências constam no arquivo original.
