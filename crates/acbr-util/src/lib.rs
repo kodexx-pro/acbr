@@ -713,3 +713,38 @@ pub fn pad_space_full(text: &str, len: usize, separator: &str, fill: char, trim:
     }
     pad_right(&result, len, fill)
 }
+
+/// Número de unidades de texto Unicode, equivalente útil a `LengthNativeString`.
+pub fn length_native_string(text: &str) -> usize {
+    text.chars().count()
+}
+
+pub fn left_str_native_string(text: &str, len: usize) -> String {
+    left_str(text, len)
+}
+pub fn right_str_native_string(text: &str, len: usize) -> String {
+    right_str(text, len)
+}
+
+/// `RPos` com início máximo de busca em posição 1-based (posições UTF-8 em bytes).
+pub fn rpos(needle: &str, text: &str, start_pos: usize) -> usize {
+    if needle.is_empty() || start_pos == 0 || start_pos > text.len() {
+        return 0;
+    }
+    text[..start_pos.min(text.len())]
+        .match_indices(needle)
+        .last()
+        .map_or(0, |(i, _)| i + 1)
+}
+
+pub fn poem_zeros_int(number: i64, len: usize) -> String {
+    poem_zeros(&number.to_string(), len)
+}
+
+/// Remove apenas linhas vazias, mantendo linhas compostas de espaços.
+pub fn remove_empty_lines_from_text(text: &str) -> String {
+    text.lines()
+        .filter(|line| !line.is_empty())
+        .collect::<alloc::vec::Vec<_>>()
+        .join("\n")
+}
